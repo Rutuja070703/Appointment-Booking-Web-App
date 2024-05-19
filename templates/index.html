@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Booking</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .container {
+            max-width: 500px;
+            margin-top: 50px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0px rgba(255,255,255,0.1);
+            padding: 30px;
+            background-color: #454d55;
+        }
+        .message {
+            margin-bottom: 10px;
+            height: auto;
+            min-height: 50px; /* Set a minimum height for message boxes */
+        }
+        .user-message {
+            text-align: right;
+        }
+        .bot-message {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {% for message in messages %}
+          {{ message }}
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+    {% endwith %}
+  
+    <div class="container">
+        <div id="chatBody">
+            <div class="message">
+                <div class="bot-message">Hi there! How can I help you today?</div>
+            </div>
+            <div class="message">
+                <div class="user-message">
+                    <button class="btn btn-primary" onclick="sendMessage('book_appointment')">Book an Appointment</button>
+                    <button class="btn btn-secondary" onclick="sendMessage('cancel_appointment')">Cancel an Appointment</button>
+                    <button class="btn btn-secondary" onclick="sendMessage('exit')" >Exit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function sendMessage(action) {
+            if (action === 'exit') {
+                displayMessage("Thank you! Visit again.");
+                return;
+            }
+            var message = { "message": action };
+            fetch('/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message)
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayMessage(data.message);
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.options) {
+                    displayOptions(data.options);
+                }
+            });
+        }
+        
+
+        function displayMessage(message) {
+            var chatBody = document.getElementById('chatBody');
+            var messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = '<div class="bot-message">' + message + '</div>';
+            chatBody.appendChild(messageDiv);
+        }
+
+        function displayOptions(options) {
+            var userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message';
+            var optionsHtml = '<div class="user-message">';
+            options.forEach(option => {
+                optionsHtml += '<button class="btn btn-primary" onclick="sendMessage(\'' + option.action + '\')">' + option.text + '</button>';
+            });
+            optionsHtml += '</div>';
+            userMessageDiv.innerHTML = optionsHtml;
+            document.getElementById('chatBody').appendChild(userMessageDiv);
+        }
+    </script>
+</body>
+</html>
